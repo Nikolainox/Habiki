@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Project 1 – Smart 90-Day Calendar + Pat Riley Tracker</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project 1 – Smart Calendar V2</title>
 <style>
 body{
   font-family:'Poppins',sans-serif;
   background:linear-gradient(160deg,#7f00ff,#e100ff);
   color:#fff;margin:0;padding:20px;text-align:center;
 }
-.container{max-width:640px;margin:auto;}
+.container{max-width:700px;margin:auto;}
 #calendar{
-  display:grid;
-  grid-template-columns:repeat(10,1fr);
-  gap:4px;margin-top:10px;
+  display:grid;grid-template-columns:repeat(10,1fr);
+  gap:6px;margin-top:10px;
 }
 .day{
-  background:rgba(255,255,255,0.1);
-  border-radius:8px;
-  padding:10px;
+  border-radius:10px;
+  padding:12px;
   cursor:pointer;
   font-weight:600;
   transition:.2s;
+  background:rgba(255,255,255,0.1);
 }
-.day:hover{transform:scale(1.08);}
-.day.completed{background:#00eaff;color:#000;}
+.day:hover{transform:scale(1.07);}
+.day.completed{color:#000;}
 .popup{
   position:fixed;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.6);
@@ -33,9 +32,8 @@ body{
 }
 .hidden{display:none;}
 .popup-content{
-  background:#222;border-radius:16px;
-  padding:20px;max-width:360px;width:90%;
-  text-align:left;
+  background:#222;border-radius:16px;padding:20px;
+  max-width:400px;width:90%;text-align:left;
 }
 button{
   border:none;padding:8px 14px;border-radius:25px;
@@ -43,106 +41,108 @@ button{
   background:linear-gradient(90deg,#ff0080,#7928ca);
   margin:4px;
 }
-#habitSection .item,#goalSection .item{
-  display:flex;justify-content:space-between;margin:6px 0;
-}
+.item{display:flex;justify-content:space-between;margin:6px 0;}
 #dayScore{text-align:center;font-size:20px;font-weight:700;margin:10px 0;}
-canvas{margin-top:30px;}
+canvas{margin-top:25px;}
+.statsCard{
+  background:rgba(255,255,255,0.1);
+  padding:12px;border-radius:12px;margin-top:14px;
+}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Smart 90-Day Calendar 🏒 + Pat Riley Tracker</h1>
+  <h1>Smart 90-Day Calendar 🏒 V2</h1>
   <div id="calendar"></div>
 
-  <!-- popup card -->
   <div id="dayPopup" class="popup hidden">
     <div class="popup-content">
-      <h2 id="popupTitle">Day 1</h2>
+      <h2 id="popupTitle">Day</h2>
+      <div id="yesterdayStats"></div>
       <div id="habitSection"></div>
+      <button onclick="addHabit()">➕ Add Habit</button>
       <div id="goalSection"></div>
-      <div id="dayScore">Score 0 %</div>
+      <button onclick="addGoal()">➕ Add Goal</button>
+      <div id="dayScore">Score 0%</div>
       <div class="buttons">
-        <button onclick="startDay()">Start Day</button>
-        <button onclick="finalizeDay()">Finalize Day</button>
+        <button onclick="startDay()">Start</button>
+        <button onclick="finalizeDay()">Finalize</button>
         <button onclick="closePopup()">Close</button>
       </div>
     </div>
   </div>
 
-  <canvas id="rileyChart" height="150"></canvas>
+  <div class="statsCard" id="overallStats"></div>
+  <canvas id="rileyChart" height="160"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// ---------- defaults ----------
-let habits=["Wake up early","Workout","Read"];
-let goals=["Stay focused","Eat clean"];
+let habits=JSON.parse(localStorage.getItem("habits")||'["Wake up early","Workout","Read"]');
+let goals=JSON.parse(localStorage.getItem("goals")||'["Stay focused","Eat clean"]');
 let days=JSON.parse(localStorage.getItem("days")||"{}");
 let selectedDay=null;
 const cal=document.getElementById("calendar");
+let chart;
 
-// ---------- render calendar ----------
+// -------- calendar --------
 function renderCalendar(){
   cal.innerHTML="";
   for(let i=1;i<=90;i++){
     const d=document.createElement("div");
+    const score=days[i]?.score||0;
+    let emoji="⬜";
+    if(score>=80)emoji="💪";
+    else if(score>=60)emoji="🙂";
+    else if(score>0)emoji="⚠️";
     d.className="day";
     if(days[i]?.finalized)d.classList.add("completed");
-    d.textContent=i;
+    d.style.background=days[i]?.finalized?`linear-gradient(135deg,#00eaff ${score}%,#555)`:"rgba(255,255,255,0.1)";
+    d.textContent=emoji+" "+i;
     d.onclick=()=>openDay(i);
     cal.appendChild(d);
   }
-  drawRileyChart();
+  drawRileyChart();updateOverallStats();
 }
 renderCalendar();
 
-// ---------- popup ----------
+// -------- popup --------
 function openDay(num){
   selectedDay=num;
   document.getElementById("dayPopup").classList.remove("hidden");
   document.getElementById("popupTitle").innerText=`Day ${num}`;
-  renderPopup();
+  renderPopup();yesterdayView();
 }
-function closePopup(){
-  document.getElementById("dayPopup").classList.add("hidden");
-  saveData();renderCalendar();
-}
+function closePopup(){document.getElementById("dayPopup").classList.add("hidden");saveData();renderCalendar();}
 
-// ---------- habits & goals ----------
+// -------- habits & goals --------
 function renderPopup(){
   const hs=document.getElementById("habitSection");
   hs.innerHTML="<h3>Habits</h3>";
   habits.forEach((h,i)=>{
-    const item=document.createElement("div");item.className="item";
     const done=days[selectedDay]?.habitsDone?.[i]||false;
-    item.innerHTML=`<span>${h}</span>
-      <input type='checkbox' ${done?"checked":""}
-      onchange='toggleHabit(${i},this.checked)'>`;
-    hs.appendChild(item);
+    hs.innerHTML+=`<div class='item'><span>${h}</span>
+    <input type='checkbox' ${done?"checked":""} onchange='toggleHabit(${i},this.checked)'>
+    <button onclick='deleteHabit(${i})'>✕</button></div>`;
   });
   const gs=document.getElementById("goalSection");
   gs.innerHTML="<h3>Goals</h3>";
   goals.forEach((g,i)=>{
-    const item=document.createElement("div");item.className="item";
     const done=days[selectedDay]?.goalsDone?.[i]||false;
-    item.innerHTML=`<span>${g}</span>
-      <input type='checkbox' ${done?"checked":""}
-      onchange='toggleGoal(${i},this.checked)'>`;
-    gs.appendChild(item);
+    gs.innerHTML+=`<div class='item'><span>${g}</span>
+    <input type='checkbox' ${done?"checked":""} onchange='toggleGoal(${i},this.checked)'>
+    <button onclick='deleteGoal(${i})'>✕</button></div>`;
   });
   updateScore();
 }
-function toggleHabit(i,checked){
-  days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};
-  days[selectedDay].habitsDone[i]=checked;updateScore();
-}
-function toggleGoal(i,checked){
-  days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};
-  days[selectedDay].goalsDone[i]=checked;updateScore();
-}
+function addHabit(){const n=prompt("New habit:");if(!n)return;habits.push(n);saveData();renderPopup();}
+function addGoal(){const n=prompt("New goal:");if(!n)return;goals.push(n);saveData();renderPopup();}
+function deleteHabit(i){if(confirm("Delete habit?")){habits.splice(i,1);saveData();renderPopup();}}
+function deleteGoal(i){if(confirm("Delete goal?")){goals.splice(i,1);saveData();renderPopup();}}
+function toggleHabit(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};days[selectedDay].habitsDone[i]=c;updateScore();}
+function toggleGoal(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};days[selectedDay].goalsDone[i]=c;updateScore();}
 
-// ---------- score & Pat Riley formula ----------
+// -------- score & Pat Riley formula --------
 function updateScore(){
   const d=days[selectedDay]||{};
   const h=(d.habitsDone||[]).filter(Boolean).length;
@@ -151,18 +151,40 @@ function updateScore(){
   const score=Math.round(((h+g)/total)*100);
   d.score=score;days[selectedDay]=d;
   document.getElementById("dayScore").innerText=`Score ${score}%`;
-  saveData();drawRileyChart();
+  saveData();drawRileyChart();updateOverallStats();
 }
-function startDay(){alert(`Day ${selectedDay} started! Track your goals.`);}
+function startDay(){alert(`Day ${selectedDay} started!`);}
 function finalizeDay(){
   if(!selectedDay)return;
   days[selectedDay].finalized=true;
-  saveData();renderCalendar();drawRileyChart();
+  saveData();renderCalendar();drawRileyChart();updateOverallStats();
   alert(`Day ${selectedDay} finalized!`);
 }
 
-// ---------- Pat Riley chart ----------
-let chart;
+// -------- Yesterday & overall stats --------
+function yesterdayView(){
+  const y=selectedDay-1;
+  let yScore=days[y]?.score||0;
+  let tScore=days[selectedDay]?.score||0;
+  let diff=tScore-yScore;
+  let arrow=diff>0?"⬆️":diff<0?"⬇️":"➡️";
+  document.getElementById("yesterdayStats").innerHTML=
+   `<div><b>Yesterday:</b> ${yScore}% | <b>Today:</b> ${tScore}% ${arrow} ${diff}</div>`;
+}
+function updateOverallStats(){
+  const all=Object.values(days).filter(d=>d.finalized);
+  const total=all.length;
+  const avg=all.length?Math.round(all.reduce((a,b)=>a+b.score,0)/all.length):0;
+  const best=all.length?Math.max(...all.map(d=>d.score)):0;
+  let streak=0;
+  for(let i=90;i>=1;i--){
+    if(days[i]?.finalized)streak++;else if(streak>0)break;
+  }
+  document.getElementById("overallStats").innerHTML=
+   `🏅 <b>Total Days:</b> ${total} | 📊 <b>Avg:</b> ${avg}% | 🔥 <b>Streak:</b> ${streak} | 💥 <b>Best:</b> ${best}%`;
+}
+
+// -------- Pat Riley chart --------
 function drawRileyChart(){
   const ctx=document.getElementById("rileyChart").getContext("2d");
   const labels=[],scores=[];
@@ -185,8 +207,12 @@ function drawRileyChart(){
   });
 }
 
-// ---------- storage ----------
-function saveData(){localStorage.setItem("days",JSON.stringify(days));}
+// -------- save --------
+function saveData(){
+  localStorage.setItem("habits",JSON.stringify(habits));
+  localStorage.setItem("goals",JSON.stringify(goals));
+  localStorage.setItem("days",JSON.stringify(days));
+}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closePopup();});
 </script>
 </body>
