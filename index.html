@@ -3,67 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Project 1 – Smart Calendar V2</title>
+<title>Project 1 – Weighted Greatness Player Card v5</title>
 <style>
-body{
-  font-family:'Poppins',sans-serif;
-  background:linear-gradient(160deg,#7f00ff,#e100ff);
-  color:#fff;margin:0;padding:20px;text-align:center;
-}
-.container{max-width:700px;margin:auto;}
-#calendar{
-  display:grid;grid-template-columns:repeat(10,1fr);
-  gap:6px;margin-top:10px;
-}
-.day{
-  border-radius:10px;
-  padding:12px;
-  cursor:pointer;
-  font-weight:600;
-  transition:.2s;
-  background:rgba(255,255,255,0.1);
-}
-.day:hover{transform:scale(1.07);}
-.day.completed{color:#000;}
-.popup{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.6);
-  display:flex;justify-content:center;align-items:center;
-}
-.hidden{display:none;}
-.popup-content{
-  background:#222;border-radius:16px;padding:20px;
-  max-width:400px;width:90%;text-align:left;
-}
-button{
-  border:none;padding:8px 14px;border-radius:25px;
-  font-weight:600;color:#fff;cursor:pointer;
-  background:linear-gradient(90deg,#ff0080,#7928ca);
-  margin:4px;
-}
-.item{display:flex;justify-content:space-between;margin:6px 0;}
-#dayScore{text-align:center;font-size:20px;font-weight:700;margin:10px 0;}
-canvas{margin-top:25px;}
-.statsCard{
-  background:rgba(255,255,255,0.1);
-  padding:12px;border-radius:12px;margin-top:14px;
-}
+body{font-family:'Poppins',sans-serif;background:radial-gradient(circle,#010018 0%,#000 100%);
+color:#fff;margin:0;padding:20px;text-align:center}
+.container{max-width:720px;margin:auto}
+h1{color:#00eaff;text-shadow:0 0 12px #00eaff}
+#calendar{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:10px}
+.day{background:rgba(255,255,255,.1);border-radius:8px;padding:10px;cursor:pointer;font-weight:600;transition:.2s}
+.day:hover{transform:scale(1.07)}
+.day.completed{background:#00eaff;color:#000}
+.popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);
+display:flex;justify-content:center;align-items:center}
+.hidden{display:none}
+.popup-content{background:#222;border:1px solid #00eaff;border-radius:14px;padding:18px;
+max-width:360px;width:90%;text-align:left}
+button{border:none;padding:8px 14px;border-radius:25px;font-weight:600;color:#fff;cursor:pointer;
+background:linear-gradient(90deg,#ff0080,#7928ca);margin:4px}
+.item{display:flex;justify-content:space-between;margin:6px 0}
+#dayScore{text-align:center;font-size:18px;font-weight:700;margin:8px 0}
+canvas{margin-top:25px}
+/* Player Card look */
+.playerCard{position:relative;background:url('https://images.unsplash.com/photo-1601451882931-8c329fda3c45?auto=format&fit=crop&w=720&q=80')center/cover;
+border:2px solid #00eaff;border-radius:16px;margin-top:25px;padding:20px;box-shadow:0 0 25px #00eaff inset,0 0 30px #00eaff66;overflow:hidden}
+.playerOverlay{position:absolute;inset:0;background:rgba(0,0,40,.6);backdrop-filter:blur(3px)}
+.playerStats{position:relative;z-index:2;font-family:'Courier New',monospace;text-align:left}
+.playerStats h2{text-align:center;margin-top:0;color:#ffd700;text-shadow:0 0 10px #ffd700}
+.statRow{display:flex;justify-content:space-between;margin:2px 0}
+.label{color:#0ff}.value{color:#fff;animation:fadeIn .8s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ratingBox{margin:10px 0;text-align:center}
+.ratingBox input{width:100%}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Smart 90-Day Calendar 🏒 V2</h1>
+  <h1>🏒 The Greatness Tracker v5 – Weighted Player Card</h1>
   <div id="calendar"></div>
 
+  <!-- popup -->
   <div id="dayPopup" class="popup hidden">
     <div class="popup-content">
-      <h2 id="popupTitle">Day</h2>
+      <h2 id="popupTitle">Day 1</h2>
       <div id="yesterdayStats"></div>
       <div id="habitSection"></div>
       <button onclick="addHabit()">➕ Add Habit</button>
       <div id="goalSection"></div>
       <button onclick="addGoal()">➕ Add Goal</button>
-      <div id="dayScore">Score 0%</div>
+
+      <div class="ratingBox">
+        <label>Daily Rating (How you felt): <span id="ratingValue">70</span>%</label>
+        <input type="range" id="dailyRating" min="0" max="100" value="70" oninput="showRating(this.value)">
+      </div>
+
+      <div id="dayScore">Score 0 %</div>
       <div class="buttons">
         <button onclick="startDay()">Start</button>
         <button onclick="finalizeDay()">Finalize</button>
@@ -72,147 +65,133 @@ canvas{margin-top:25px;}
     </div>
   </div>
 
-  <div class="statsCard" id="overallStats"></div>
-  <canvas id="rileyChart" height="160"></canvas>
+  <canvas id="rileyChart" height="150"></canvas>
+
+  <!-- Player Card -->
+  <div class="playerCard">
+    <div class="playerOverlay"></div>
+    <div class="playerStats">
+      <h2>🥅 PLAYER STATS – NIKOLAI LAIHANEN</h2>
+      <div class="statRow"><span class="label">Games Played:</span><span class="value" id="gamesPlayed">0/90</span></div>
+      <div class="statRow"><span class="label">CBE (Average Effort):</span><span class="value" id="cbe">0%</span></div>
+      <div class="statRow"><span class="label">Streak:</span><span class="value" id="streak">0 Days</span></div>
+      <div class="statRow"><span class="label">Best Day:</span><span class="value" id="bestDay">0%</span></div>
+      <div class="statRow"><span class="label">Lowest Day:</span><span class="value" id="lowDay">0%</span></div>
+      <div class="statRow"><span class="label">Goals (Habits):</span><span class="value" id="totalHabits">0</span></div>
+      <div class="statRow"><span class="label">Assists (Goals):</span><span class="value" id="totalGoals">0</span></div>
+      <div class="statRow"><span class="label">Consistency %:</span><span class="value" id="consistency">0%</span></div>
+      <div class="statRow"><span class="label">+/- Trend:</span><span class="value" id="trend">0</span></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let habits=JSON.parse(localStorage.getItem("habits")||'["Wake up early","Workout","Read"]');
-let goals=JSON.parse(localStorage.getItem("goals")||'["Stay focused","Eat clean"]');
+let habits=JSON.parse(localStorage.getItem("habits")||'["Workout","Read"]');
+let goals=JSON.parse(localStorage.getItem("goals")||'["Focus","Eat clean"]');
 let days=JSON.parse(localStorage.getItem("days")||"{}");
-let selectedDay=null;
+let selectedDay=null;let chart;
 const cal=document.getElementById("calendar");
-let chart;
 
-// -------- calendar --------
 function renderCalendar(){
-  cal.innerHTML="";
-  for(let i=1;i<=90;i++){
-    const d=document.createElement("div");
-    const score=days[i]?.score||0;
-    let emoji="⬜";
-    if(score>=80)emoji="💪";
-    else if(score>=60)emoji="🙂";
-    else if(score>0)emoji="⚠️";
-    d.className="day";
-    if(days[i]?.finalized)d.classList.add("completed");
-    d.style.background=days[i]?.finalized?`linear-gradient(135deg,#00eaff ${score}%,#555)`:"rgba(255,255,255,0.1)";
-    d.textContent=emoji+" "+i;
-    d.onclick=()=>openDay(i);
-    cal.appendChild(d);
-  }
-  drawRileyChart();updateOverallStats();
-}
+ cal.innerHTML="";
+ for(let i=1;i<=90;i++){
+  const d=document.createElement("div");
+  const score=days[i]?.score||0;
+  let emoji="⬜";if(score>=80)emoji="💪";else if(score>=60)emoji="🙂";else if(score>0)emoji="⚠️";
+  d.className="day";if(days[i]?.finalized)d.classList.add("completed");
+  d.style.background=days[i]?.finalized?`linear-gradient(135deg,#00eaff ${score}%,#333)`:"rgba(255,255,255,.1)";
+  d.textContent=emoji+" "+i;d.onclick=()=>openDay(i);cal.appendChild(d);}
+ drawRileyChart();updateStatsBoard();}
 renderCalendar();
 
-// -------- popup --------
 function openDay(num){
-  selectedDay=num;
-  document.getElementById("dayPopup").classList.remove("hidden");
-  document.getElementById("popupTitle").innerText=`Day ${num}`;
-  renderPopup();yesterdayView();
-}
+ selectedDay=num;document.getElementById("dayPopup").classList.remove("hidden");
+ document.getElementById("popupTitle").innerText=`Day ${num}`;renderPopup();yesterdayView();}
 function closePopup(){document.getElementById("dayPopup").classList.add("hidden");saveData();renderCalendar();}
 
-// -------- habits & goals --------
 function renderPopup(){
-  const hs=document.getElementById("habitSection");
-  hs.innerHTML="<h3>Habits</h3>";
-  habits.forEach((h,i)=>{
-    const done=days[selectedDay]?.habitsDone?.[i]||false;
-    hs.innerHTML+=`<div class='item'><span>${h}</span>
-    <input type='checkbox' ${done?"checked":""} onchange='toggleHabit(${i},this.checked)'>
-    <button onclick='deleteHabit(${i})'>✕</button></div>`;
-  });
-  const gs=document.getElementById("goalSection");
-  gs.innerHTML="<h3>Goals</h3>";
-  goals.forEach((g,i)=>{
-    const done=days[selectedDay]?.goalsDone?.[i]||false;
-    gs.innerHTML+=`<div class='item'><span>${g}</span>
-    <input type='checkbox' ${done?"checked":""} onchange='toggleGoal(${i},this.checked)'>
-    <button onclick='deleteGoal(${i})'>✕</button></div>`;
-  });
-  updateScore();
-}
+ const hs=document.getElementById("habitSection");hs.innerHTML="<h3>Habits</h3>";
+ habits.forEach((h,i)=>{const done=days[selectedDay]?.habitsDone?.[i]||false;
+ hs.innerHTML+=`<div class='item'><span>${h}</span>
+ <input type='checkbox' ${done?"checked":""} onchange='toggleHabit(${i},this.checked)'>
+ <button onclick='deleteHabit(${i})'>✕</button></div>`;});
+ const gs=document.getElementById("goalSection");gs.innerHTML="<h3>Goals</h3>";
+ goals.forEach((g,i)=>{const done=days[selectedDay]?.goalsDone?.[i]||false;
+ gs.innerHTML+=`<div class='item'><span>${g}</span>
+ <input type='checkbox' ${done?"checked":""} onchange='toggleGoal(${i},this.checked)'>
+ <button onclick='deleteGoal(${i})'>✕</button></div>`;});
+ const rating=days[selectedDay]?.dailyRating||70;
+ document.getElementById("dailyRating").value=rating;
+ document.getElementById("ratingValue").innerText=rating;
+ updateScore();}
 function addHabit(){const n=prompt("New habit:");if(!n)return;habits.push(n);saveData();renderPopup();}
 function addGoal(){const n=prompt("New goal:");if(!n)return;goals.push(n);saveData();renderPopup();}
 function deleteHabit(i){if(confirm("Delete habit?")){habits.splice(i,1);saveData();renderPopup();}}
 function deleteGoal(i){if(confirm("Delete goal?")){goals.splice(i,1);saveData();renderPopup();}}
-function toggleHabit(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};days[selectedDay].habitsDone[i]=c;updateScore();}
-function toggleGoal(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};days[selectedDay].goalsDone[i]=c;updateScore();}
+function toggleHabit(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};
+ days[selectedDay].habitsDone[i]=c;updateScore();}
+function toggleGoal(i,c){days[selectedDay]=days[selectedDay]||{habitsDone:[],goalsDone:[]};
+ days[selectedDay].goalsDone[i]=c;updateScore();}
+function showRating(v){document.getElementById("ratingValue").innerText=v;updateScore();}
 
-// -------- score & Pat Riley formula --------
 function updateScore(){
-  const d=days[selectedDay]||{};
-  const h=(d.habitsDone||[]).filter(Boolean).length;
-  const g=(d.goalsDone||[]).filter(Boolean).length;
-  const total=habits.length+goals.length||1;
-  const score=Math.round(((h+g)/total)*100);
-  d.score=score;days[selectedDay]=d;
-  document.getElementById("dayScore").innerText=`Score ${score}%`;
-  saveData();drawRileyChart();updateOverallStats();
-}
+ const d=days[selectedDay]||{};
+ const h=(d.habitsDone||[]).filter(Boolean).length;
+ const g=(d.goalsDone||[]).filter(Boolean).length;
+ const total=habits.length+goals.length||1;
+ const behavior=((h+g)/total)*100;
+ const rating=parseInt(document.getElementById("dailyRating").value)||0;
+ const score=Math.round((behavior*0.6)+(rating*0.4));
+ d.score=score;d.dailyRating=rating;days[selectedDay]=d;
+ document.getElementById("dayScore").innerText=`Score ${score}%`;
+ saveData();drawRileyChart();updateStatsBoard();}
 function startDay(){alert(`Day ${selectedDay} started!`);}
-function finalizeDay(){
-  if(!selectedDay)return;
-  days[selectedDay].finalized=true;
-  saveData();renderCalendar();drawRileyChart();updateOverallStats();
-  alert(`Day ${selectedDay} finalized!`);
-}
+function finalizeDay(){if(!selectedDay)return;
+ days[selectedDay].finalized=true;saveData();renderCalendar();drawRileyChart();updateStatsBoard();
+ alert(`Day ${selectedDay} finalized!`);}
 
-// -------- Yesterday & overall stats --------
 function yesterdayView(){
-  const y=selectedDay-1;
-  let yScore=days[y]?.score||0;
-  let tScore=days[selectedDay]?.score||0;
-  let diff=tScore-yScore;
-  let arrow=diff>0?"⬆️":diff<0?"⬇️":"➡️";
-  document.getElementById("yesterdayStats").innerHTML=
-   `<div><b>Yesterday:</b> ${yScore}% | <b>Today:</b> ${tScore}% ${arrow} ${diff}</div>`;
-}
-function updateOverallStats(){
-  const all=Object.values(days).filter(d=>d.finalized);
-  const total=all.length;
-  const avg=all.length?Math.round(all.reduce((a,b)=>a+b.score,0)/all.length):0;
-  const best=all.length?Math.max(...all.map(d=>d.score)):0;
-  let streak=0;
-  for(let i=90;i>=1;i--){
-    if(days[i]?.finalized)streak++;else if(streak>0)break;
-  }
-  document.getElementById("overallStats").innerHTML=
-   `🏅 <b>Total Days:</b> ${total} | 📊 <b>Avg:</b> ${avg}% | 🔥 <b>Streak:</b> ${streak} | 💥 <b>Best:</b> ${best}%`;
-}
+ const y=selectedDay-1;let yScore=days[y]?.score||0;let tScore=days[selectedDay]?.score||0;
+ let diff=tScore-yScore;let arrow=diff>0?"⬆️":diff<0?"⬇️":"➡️";
+ document.getElementById("yesterdayStats").innerHTML=`<div><b>Yesterday:</b> ${yScore}% | <b>Today:</b> ${tScore}% ${arrow} ${diff}</div>`;}
 
-// -------- Pat Riley chart --------
 function drawRileyChart(){
-  const ctx=document.getElementById("rileyChart").getContext("2d");
-  const labels=[],scores=[];
-  for(let i=1;i<=90;i++){
-    if(days[i]?.finalized){labels.push(i);scores.push(days[i].score);}
-  }
-  const avg=scores.map((_,i)=>{
-    const slice=scores.slice(Math.max(0,i-6),i+1);
-    return slice.reduce((a,b)=>a+b,0)/slice.length;
-  });
-  if(chart)chart.destroy();
-  chart=new Chart(ctx,{
-    type:"line",
-    data:{labels:labels,
-      datasets:[
-        {label:"Daily Score %",data:scores,borderColor:"#00eaff",fill:false},
-        {label:"7-Day Avg (CBE Line)",data:avg,borderColor:"#ffd700",fill:false,borderDash:[5,5]}
-      ]},
-    options:{scales:{y:{beginAtZero:true,max:100}}}
-  });
+ const ctx=document.getElementById("rileyChart").getContext("2d");
+ const labels=[],scores=[];
+ for(let i=1;i<=90;i++){if(days[i]?.finalized){labels.push(i);scores.push(days[i].score);}}
+ const avg=scores.map((_,i)=>{const slice=scores.slice(Math.max(0,i-6),i+1);
+ return slice.reduce((a,b)=>a+b,0)/slice.length;});
+ if(chart)chart.destroy();
+ chart=new Chart(ctx,{type:"line",data:{labels:labels,datasets:[
+ {label:"Daily Score %",data:scores,borderColor:"#00eaff",fill:false},
+ {label:"7-Day Avg (CBE)",data:avg,borderColor:"#ffd700",fill:false,borderDash:[5,5]}]},
+ options:{scales:{y:{beginAtZero:true,max:100}}}});
 }
 
-// -------- save --------
-function saveData(){
-  localStorage.setItem("habits",JSON.stringify(habits));
-  localStorage.setItem("goals",JSON.stringify(goals));
-  localStorage.setItem("days",JSON.stringify(days));
-}
+function updateStatsBoard(){
+ const all=Object.values(days).filter(d=>d.finalized);
+ const total=all.length;const scores=all.map(d=>d.score);
+ const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+ const best=scores.length?Math.max(...scores):0;const low=scores.length?Math.min(...scores):0;
+ const consistency=scores.length?Math.round((scores.filter(s=>s>=70).length/scores.length)*100):0;
+ const trend=scores.length>7?Math.round(
+ (scores.slice(-7).reduce((a,b)=>a+b,0)/7)-
+ (scores.slice(0,7).reduce((a,b)=>a+b,0)/7)):0;
+ let streak=0;for(let i=90;i>=1;i--){if(days[i]?.finalized)streak++;else if(streak>0)break;}
+ let totalHab=0,totalGoal=0;Object.values(days).forEach(d=>{
+ if(d.finalized){totalHab+=(d.habitsDone||[]).filter(Boolean).length;
+ totalGoal+=(d.goalsDone||[]).filter(Boolean).length;}});
+ animate("gamesPlayed",`${total}/90`);animate("cbe",`${avg}%`);
+ animate("streak",`${streak} Days`);animate("bestDay",`${best}%`);
+ animate("lowDay",`${low}%`);animate("totalHabits",totalHab);
+ animate("totalGoals",totalGoal);animate("consistency",`${consistency}%`);
+ animate("trend",(trend>0?"+":"")+trend);}
+function animate(id,v){const el=document.getElementById(id);el.style.opacity=0;
+ setTimeout(()=>{el.innerText=v;el.style.opacity=1;},150);}
+function saveData(){localStorage.setItem("habits",JSON.stringify(habits));
+ localStorage.setItem("goals",JSON.stringify(goals));
+ localStorage.setItem("days",JSON.stringify(days));}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closePopup();});
 </script>
 </body>
